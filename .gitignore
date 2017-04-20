@@ -1,0 +1,18 @@
+# ignore Maven generated target folders
+target
+bin
+
+# ignore eclipse files
+.project
+.classpath
+.settings
+.metadata
+
+.idea/
+## File-based project format:
+*.iws
+*.iml
+*.ipr
+
+*.log
+*.class
