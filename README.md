@@ -25,6 +25,6 @@
   15. action支持使用RequestMapping的name指定视图名。
 
 ### 群：233391281 
-### 在线文档：[http://https://github.com/xiwasong/summer-sample](https://github.com/xiwasong/summer-sample)  
-### 功能演示：[http://git.oschina.net/xiwa/summer-sample](http://git.oschina.net/xiwa/summer-sample)  
+### 在线文档：[http://http://xiwa.oschina.io/summer-sample](http://http://xiwa.oschina.io/summer-sample)  
+### 功能演示：[https://github.com/xiwasong/summer-sample](https://github.com/xiwasong/summer-sample)  
 ### 项目示例：[https://git.oschina.net/mgfireworks/mgplatform.git](https://git.oschina.net/mgfireworks/mgplatform.git)      
