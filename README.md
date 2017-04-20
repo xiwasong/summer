@@ -1,9 +1,9 @@
-summer
+﻿summer
 =======
 
 此项目目的在于提供一个简化、简洁、迅速的开发架构。
 
-它是基于spring mvc3的RESTfull风格web框架、socket服务框架，并支持spring boot，数据库操作同样使用的是spring的jdbc template在它的基础上进行封装简化，视图层采用的是Rythm模板引擎(http://rythmengine.org)。
+它是基于spring boot的RESTfull风格web框架、socket服务框架，数据库操作同样使用的是spring的jdbc template在它的基础上进行封装简化，视图层采用的是Rythm模板引擎(http://rythmengine.org)。
 可以用它来做web项目、微服务、socket服务，且同一套代码同时兼容这三种方式。
 
 它的优点如下：
