@@ -26,6 +26,6 @@ summer
 
 ### 群：233391281 
 ### github:[https://github.com/xiwasong/summer](https://github.com/xiwasong/summer)
-### 在线文档：[http://http://xiwa.oschina.io/summer-sample](http://http://xiwa.oschina.io/summer-sample)  
+### 在线文档：[http://http://xiwa.oschina.io/summer-sample](http://xiwa.oschina.io/summer-sample/html/static/doc/index.html)  
 ### 功能演示：[http://git.oschina.net/xiwa/summer-sample](http://git.oschina.net/xiwa/summer-sample)  
 ### 项目示例：[https://git.oschina.net/mgfireworks/mgplatform.git](https://git.oschina.net/mgfireworks/mgplatform.git)      
