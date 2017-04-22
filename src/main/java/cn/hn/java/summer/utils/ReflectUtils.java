@@ -1,6 +1,15 @@
 package cn.hn.java.summer.utils;
 
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.aop.framework.AdvisedSupport;
+import org.springframework.aop.framework.AopProxy;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.util.ReflectionUtils;
+
 import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
@@ -12,14 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.aop.framework.AdvisedSupport;
-import org.springframework.aop.framework.AopProxy;
-import org.springframework.aop.support.AopUtils;
-
-public class ReflectUtils {
+public class ReflectUtils extends ReflectionUtils{
 
 	static Log logger=LogFactory.getLog(ReflectUtils.class);
 	
@@ -28,18 +30,17 @@ public class ReflectUtils {
 	 * @param cls
 	 * @return
 	 */
-	@SuppressWarnings("rawtypes")
 	public static boolean hasProperty(Class cls){
-		//找到有get开头、并与字段名称一致
-		Field[] fields= cls.getDeclaredFields();
-		Method[] mths=cls.getDeclaredMethods();
-		for(Field f:fields){
-			for(Method m:mths){
-				if(m.getName().startsWith("get") && 
-						f.getName().toUpperCase().equals(m.getName().substring(3).toUpperCase())){
-					return true;
-				}
+		Field[] fields= getAllFields(cls);
+		for(Field f : fields){
+			PropertyDescriptor prop;
+			try {
+				prop = new PropertyDescriptor(f.getName(),cls);
+			} catch (IntrospectionException e) {
+				logger.error("hasProperty error!",e);
+				continue;
 			}
+			return prop.getReadMethod()!=null || prop.getWriteMethod()!=null;
 		}
 		return false;
 	}
@@ -50,8 +51,7 @@ public class ReflectUtils {
 	 * @param index 第几个类型
 	 * @return
 	 */
-	@SuppressWarnings({ "rawtypes" })
-	public static Class getClassGenricType(final Class clazz, final int index) {  
+	public static Class getClassGenericType(final Class clazz, final int index) {
         Type genType = clazz.getGenericSuperclass();  
         if (!(genType instanceof ParameterizedType)) {  
             return Object.class;  
@@ -71,7 +71,6 @@ public class ReflectUtils {
 	 * @param cls
 	 * @return
 	 */
-	@SuppressWarnings("rawtypes")
 	public static Field[] getAllFields(Class cls){
 		Field[] fs=cls.getDeclaredFields();
 		if(cls.getSuperclass()!=Object.class){
@@ -88,7 +87,6 @@ public class ReflectUtils {
 	 * @throws SecurityException
 	 * @throws NoSuchMethodException
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static Method getMethod(Class cls,String name){
 		Method mtd=null;
 		try {
@@ -105,19 +103,54 @@ public class ReflectUtils {
 		}
 		return mtd;
 	}
-	
+
 	/**
-	 * 取指定字段名的get方法
+	 * 获取类中指定名称的声明的字段，包括父类
 	 * @param cls
-	 * @param name
+	 * @param fieldName
 	 * @return
-	 * @throws NoSuchMethodException 
-	 * @throws SecurityException 
 	 */
-	@SuppressWarnings("rawtypes")
-	public static Method getGetter(Class cls,String name) throws SecurityException, NoSuchMethodException{
-		name="get"+name.substring(0,1).toUpperCase()+name.substring(1);
-		return getMethod(cls,name);
+	public static Field getField(Class cls, String fieldName){
+		Field field;
+		try {
+			field = cls.getDeclaredField(fieldName);
+		} catch (NoSuchFieldException e) {
+			logger.error("getField error!",e);
+			return  null;
+		}
+		if(field==null){
+			cls= cls.getSuperclass();
+			if(cls!=Object.class){
+				field=getField(cls,fieldName);
+			}
+		}
+		return field;
+	}
+
+	/**
+	 * 获取类型的class
+	 * @param type
+	 * @return
+	 */
+	public static Class getTypeClass(Type type){
+		if(type instanceof Class){
+			return (Class)type;
+		}
+		return (Class)((ParameterizedType)type).getRawType();
+	}
+
+	/**
+	 * 取类型的实际类型参数列表
+	 * @param type
+	 * @return
+	 */
+	public static Class[] getActualTypeArguments(Type type){
+		Type[] types =((ParameterizedType)type).getActualTypeArguments();
+		Class[] classes=new Class[types.length];
+		for(int i=0; i<types.length; i++){
+			classes[i]=(Class)types[i];
+		}
+		return classes;
 	}
 	
 	/**
@@ -130,22 +163,13 @@ public class ReflectUtils {
 			return null;
 		}
 		
-		Map<String,Object> rst=new HashMap<String, Object>();
+		Map<String,Object> rst=new HashMap<>();
 		
 		//取所有属性
 		Field[] fields= getAllFields(obj.getClass());
 		
 		for(Field f : fields){
-			//取属性值
-			f.setAccessible(true);
-			//取参数值
-			Object value=null;
-			try {
-				value = f.get(obj);
-				//取不到的为null
-			} catch (IllegalArgumentException e) {				
-			} catch (IllegalAccessException e) {
-			}
+			Object value=getFieldValue(obj,f.getName());
 			rst.put(f.getName(),value);
 		}
 		
@@ -162,7 +186,7 @@ public class ReflectUtils {
         if(obj == null){  
             return null;  
         }          
-        Map<String, Object> map = new HashMap<String, Object>();  
+        Map<String, Object> map = new HashMap<>();
         try {  
             BeanInfo beanInfo = Introspector.getBeanInfo(obj.getClass());  
             PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();  
@@ -203,10 +227,7 @@ public class ReflectUtils {
         } else { //cglib  
             return getCglibProxyTargetObject(proxy);  
         }  
-          
-          
-          
-    }    
+    }
   
     private static Object getCglibProxyTargetObject(Object proxy) throws Exception {  
         Field h = proxy.getClass().getDeclaredField("CGLIB$CALLBACK_0");  
@@ -239,82 +260,24 @@ public class ReflectUtils {
 	/**
 	 * 复制map中的值到对象
 	 * @param from
-	 * @param obj
-	 * @throws NoSuchFieldException 
-	 * @throws SecurityException 
-	 * @throws IllegalAccessException 
-	 * @throws IllegalArgumentException 
-	 * @throws InstantiationException 
+	 * @param cls
 	 */
 	public static <T> T copyValues(Map<String,Object> from,Class<T> cls){
 		T obj=null;
 		try {
 			obj = cls.newInstance();
 		} catch (InstantiationException e) {
-			logger.error("InstantiationException", e);
+			logger.error("copyValues failed!", e);
 		} catch (IllegalAccessException e) {
-			logger.error("IllegalAccessException", e);
+			logger.error("copyValues failed!", e);
 		}
 		for(String key:from.keySet()){
-			Field f=null;
-			try {
-				if(!cls.getSuperclass().getName().equals("java.lang.Object")){
-					//有父类
-					f=getAccessbleField(cls.getSuperclass(),key);
-				}
-				if(f==null){
-					f=getAccessbleField(cls,key);
-				}
-			} catch (SecurityException e) {
-				logger.error("SecurityException", e);
-			}
-			
-			//设置字段值
-			setFieldValue(f,obj,from.get(key));
+			setFieldValue(obj,key,from.get(key));
 		}
 		
 		return obj;
 	}
-	
-	/**
-	 * 设置字段值
-	 * @param f
-	 * @param obj
-	 * @param val
-	 */
-	private static void setFieldValue(Field f,Object obj,Object val){
-		try {
-			if(f!=null && obj!=null && val!=null){
-				//字段类型与值类型不一致时,尝试转换类型
-				if(f.getType()!=val.getClass()){
-					val=val==null?"0":val;
-					if(f.getType()==Integer.class || f.getType()==int.class ){
-						//int
-						val=Integer.parseInt(val.toString());
-					}else if(f.getType()==Long.class || f.getType()==long.class){
-						//long
-						val=Long.parseLong(val.toString());
-					}else if(f.getType()==Double.class || f.getType()==double.class){
-						//double
-						val=Double.parseDouble(val.toString());
-					}else if(f.getType()==Float.class || f.getType()==float.class){
-						//float
-						val=Float.parseFloat(val.toString());
-					}else if(f.getType()==Boolean.class || f.getType()==boolean.class){
-						//boolean
-						val="true".equals(val.toString().toLowerCase());
-					}
-				}
-				//System.out.println("set "+f.getName()+"="+val);
-				f.set(obj, val);
-			}
-		} catch (IllegalArgumentException e) {
-			logger.error("IllegalArgumentException", e);
-		} catch (IllegalAccessException e) {
-			logger.error("IllegalAccessException", e);
-		}
-	}
-	
+
 	/**
 	 * 取可访问的字段
 	 * @param cls
@@ -322,13 +285,11 @@ public class ReflectUtils {
 	 * @return
 	 */
 	@SuppressWarnings("rawtypes")
-	public static Field getAccessbleField(Class cls,String name){
-		Field f=null;
+	public static Field getAccessibleField(Class cls, String name){
+		Field f;
 		try {
 			f = cls.getDeclaredField(name);
-		} catch (SecurityException e) {
-			return null;
-		} catch (NoSuchFieldException e) {
+		} catch (SecurityException | NoSuchFieldException e) {
 			return null;
 		}
 		f.setAccessible(true);
@@ -341,24 +302,42 @@ public class ReflectUtils {
 	 * @param name
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public static <T> T getFieldValue(Object o,String name){
-		if(org.apache.commons.lang3.StringUtils.isBlank(name)){
+		if(StringUtils.isBlank(name)){
 			return null;
 		}
-		
-		//取到指定属性名的getter方法
-		Method mtd;
 		try {
-			mtd = getGetter(o.getClass(), name);
-			//取值
-			return (T)(mtd.invoke(o));
-		} catch (Exception e) {
-			logger.error(o.getClass().getName()+"中找不到"+name+"属性\t"+e);
+			PropertyDescriptor pd = new PropertyDescriptor(name, o.getClass());
+			//获得get方法
+			Method getter = pd.getReadMethod();
+			return (T) getter.invoke(o);
+		}catch (Exception e){
+			logger.error("invoke getter method failed!",e);
 			return null;
-		}		
+		}
 	}
-	
+
+
+	/**
+	 * 设置对象指定setter字段值
+	 * @param o
+	 * @param name
+	 * @param value
+	 */
+	public static void setFieldValue(Object o,String name,Object value){
+		if(StringUtils.isBlank(name)){
+			return;
+		}
+		try {
+			PropertyDescriptor pd = new PropertyDescriptor(name, o.getClass());
+			//获得set方法
+			Method setter = pd.getWriteMethod();
+			setter.invoke(o,value);
+		}catch (Exception e){
+			logger.error("invoke setter method failed!",e);
+		}
+	}
+
 	/**
 	 * 取对象列表中的属性值列表
 	 * @param data	对象列表
@@ -367,14 +346,14 @@ public class ReflectUtils {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> List<T> getProValueList(List<?> data,String name){
-		List<T> result=new ArrayList<T>();		
+		List<T> result=new ArrayList<>();
 		for(Object o:data){
 			//取值
-			result.add((T)getFieldValue(o,name));				
+			result.add(getFieldValue(o,name));
 		}
 		return result;
 	}
-	
+
 	/**
 	 * 将对象列表转换成字典
 	 * @param data 对象列表
@@ -383,7 +362,7 @@ public class ReflectUtils {
 	 * @return
 	 */
 	public static Map<Object, Object> toMap(List<?> data,String keyField,String valueField){
-		Map<Object,Object> result=new HashMap<Object, Object>();
+		Map<Object,Object> result=new HashMap<>();
 		
 		for(Object o:data){
 			if(o==null){

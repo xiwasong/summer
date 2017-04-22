@@ -65,7 +65,7 @@ public class SnJsonMaper extends ObjectMapper {
 			
 			if(noException){
 				//action返回对象键
-				String resultKey=WebContext.getRequestAttribute(Default.ACTIONRESULT_IN_REQUEST_KEY);
+				String resultKey=WebContext.getRequestAttribute(Default.ACTION_RESULT_IN_REQUEST_KEY);
 				_mp=new HashMap<String, Object>();
 				//包含了要返回对象的键
 				if(dataMap.containsKey(resultKey)){
@@ -81,10 +81,10 @@ public class SnJsonMaper extends ObjectMapper {
 					//对于void类型，未产生异常时，认它是成功的，只是没有返回数据
 					resultMap=new HashMap<String,Object>();
 					resultMap.put("result", true);
-				}else if(resultKey.contains(Default.MUTIPLE_RESULT_PREFIX)){
+				}else if(resultKey.contains(Default.MULTIPLE_RESULT_PREFIX)){
 					//多值键，有多个返回值的键
 					Map<String, Object> data=new HashMap<String, Object>();
-					resultKey=resultKey.replaceFirst(Default.MUTIPLE_RESULT_PREFIX, "");
+					resultKey=resultKey.replaceFirst(Default.MULTIPLE_RESULT_PREFIX, "");
 					//取到多值的每个键
 					String[] mutipleKey=resultKey.split(",");
 					for(String key : mutipleKey){

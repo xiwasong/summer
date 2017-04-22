@@ -444,5 +444,14 @@ public class WebContext {
 			logger.error("redirect error!",e);
 		}
 	}
-	
+
+	/**
+	 * 标识跳转，以便在controller aop时不调用action
+	 * @param url
+	 */
+	public static void markRedirectTo(String url){
+		HttpServletRequest request=getRequest();
+		//标记本次响应已跳转，通知视图模板略过本次请求的内容处理
+		request.setAttribute(Default.MARK_RESPONSE_IS_REDIRECTED, url);
+	}
 }

@@ -8,12 +8,12 @@ import java.util.Map;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
+import cn.hn.java.summer.exception.SummerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.ui.Model;
 
-import cn.hn.java.summer.exception.SnException;
 import cn.hn.java.summer.mvc.WebContext;
 import cn.hn.java.summer.utils.ReflectUtils;
 
@@ -46,9 +46,9 @@ public class ActionLogger {
 	 * @param method
 	 * @param args 目标方法参数
 	 * @param exception 异常信息
-	 * @throws SnException 
+	 * @throws SummerException
 	 */
-	public static void log(ApplicationContext applicationContext,Method mtd,Object[] args, String exception) throws SnException{
+	public static void log(ApplicationContext applicationContext,Method mtd,Object[] args, String exception) throws SummerException {
 		//未安装完系统，不能记录日志
 		if(!WebContext.installed){
 			return ;
@@ -80,9 +80,9 @@ public class ActionLogger {
 	
 	/**
 	 * 初始化规则
-	 * @throws SnException 
+	 * @throws SummerException
 	 */
-	private synchronized static void initRules(ApplicationContext context) throws SnException{
+	private synchronized static void initRules(ApplicationContext context) throws SummerException {
 		if(LoggingRules==null){
 			try{
 				//查找加载的包中实现了IActionLogger类的实例

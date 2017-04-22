@@ -3,7 +3,7 @@ package cn.hn.java.summer.mvc.log;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import cn.hn.java.summer.exception.SnException;
+import cn.hn.java.summer.exception.SummerException;
 
 /**
  * action日志记录器接口
@@ -17,7 +17,7 @@ public interface IActionLogger {
 	 * 取日志规则
 	 * @return
 	 */
-	public List<LogRule> getLogRules() throws SnException;	
+	public List<LogRule> getLogRules() throws SummerException;
 		
 	/**
 	 * 记录日志

@@ -1,6 +1,6 @@
 package cn.hn.java.summer.db;
 
-import cn.hn.java.summer.exception.SnException;
+import cn.hn.java.summer.exception.SummerException;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -161,5 +161,5 @@ public interface IDbOperator {
 	 * @return 影响行数
 	 */
 	@SuppressWarnings("rawtypes")
-	<T> int[] batchUpdate(String sql, List<T> batchArgs,IBatchArgMapper mapper) throws SnException;
+	<T> int[] batchUpdate(String sql, List<T> batchArgs,IBatchArgMapper mapper) throws SummerException;
 }

@@ -1,4 +1,4 @@
-﻿summer
+summer
 =======
 
 此项目目的在于提供一个简化、简洁、迅速的开发架构。
@@ -25,6 +25,7 @@
   15. action支持使用RequestMapping的name指定视图名。
 
 ### 群：233391281 
+### github:[https://github.com/xiwasong/summer](https://github.com/xiwasong/summer)
 ### 在线文档：[http://http://xiwa.oschina.io/summer-sample](http://http://xiwa.oschina.io/summer-sample)  
 ### 功能演示：[http://git.oschina.net/xiwa/summer-sample](http://git.oschina.net/xiwa/summer-sample)  
 ### 项目示例：[https://git.oschina.net/mgfireworks/mgplatform.git](https://git.oschina.net/mgfireworks/mgplatform.git)      

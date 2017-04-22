@@ -45,9 +45,9 @@ public abstract class Config {
 	public static boolean isIsSupportActionLog=false;
 
 	/**
-	 * 是否支持为restfull风格请求指定视图名
+	 * 是否支持为restful风格请求指定视图名
 	 */
-	public static boolean isIsSupportSetRestfullViewName=false;
+	public static boolean isIsSupportSetRestfulViewName =false;
 
 	/**
 	 * 数据库实体类扫描包过滤表达式，支持正则

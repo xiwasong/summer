@@ -117,7 +117,7 @@ public class ThreadContextManage {
 		}
 		
 		if(ps!=null){
-			page.setPageSize(IntUtils.parseInt(ps.toString(), Default.PAGESIZE));
+			page.setPageSize(IntUtils.parseInt(ps.toString(), Default.PAGE_SIZE));
 		}
 		
 		if(p!=null){

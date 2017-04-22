@@ -14,10 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 从建表脚本生成实体类
@@ -151,14 +148,12 @@ public class EntityGenerator{
      * @return 文件列表
      */
     private Collection<File> getAllScriptFiles(String scriptDir){
-        Collection<File> files=FileUtils.listFiles(
-                new File(
-                        getScriptPath(scriptDir)
-                ),
-                new String[]{"sql"},
-                true
-        );
-        return files;
+        File dir=new File(getScriptPath(scriptDir));
+        if(!dir.isDirectory()){
+            return new ArrayList<>();
+        }
+
+        return FileUtils.listFiles(dir,new String[]{"sql"},true);
     }
 
     /**

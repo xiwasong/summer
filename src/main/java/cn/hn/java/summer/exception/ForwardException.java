@@ -6,7 +6,7 @@ package cn.hn.java.summer.exception;
  * @version 1.0.1 2013-10-22
  *
  */
-public class ForwardException extends SnException{
+public class ForwardException extends SummerException {
 	private static final long serialVersionUID = 1L;
 	/**
 	 * 转发路径

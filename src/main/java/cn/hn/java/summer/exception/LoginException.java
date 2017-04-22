@@ -5,7 +5,7 @@ package cn.hn.java.summer.exception;
  * @author sjg
  *
  */
-public class LoginException extends SnException {
+public class LoginException extends SummerException {
 	private static final long serialVersionUID = 1L;
 
 	public LoginException(){

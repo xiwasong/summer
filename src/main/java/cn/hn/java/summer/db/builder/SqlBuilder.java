@@ -5,20 +5,21 @@ import cn.hn.java.summer.db.ConditionEntity;
 import cn.hn.java.summer.utils.AppUtils;
 import cn.hn.java.summer.utils.ArrayUtils;
 import cn.hn.java.summer.utils.ReflectUtils;
-import cn.hn.java.summer.xmlsql.SqlConfigElement;
-import cn.hn.java.summer.xmlsql.SqlConverter;
-import cn.hn.java.summer.xmlsql.SqlElement;
-import cn.hn.java.summer.xmlsql.SqlTypeElement;
+import cn.hn.java.summer.db.xmlsql.SqlConfigElement;
+import cn.hn.java.summer.db.xmlsql.SqlConverter;
+import cn.hn.java.summer.db.xmlsql.SqlElement;
+import cn.hn.java.summer.db.xmlsql.SqlTypeElement;
+import cn.hn.java.summer.utils.StringUtils;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.PrefixFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -63,6 +64,12 @@ public abstract class SqlBuilder {
 	//static final String Regexp_NullParam="where?[^?]+\\?[%\\_]*";
 
 	private static final String SQL_CONFIG_XML="sql*.xml";
+
+	/**
+	 * 级联查询父子sqlId的连接符
+	 */
+	public static  final String CASCADE_SYMBOL="<-";
+
 	/**
 	 * sql映射-query
 	 */
@@ -144,20 +151,51 @@ public abstract class SqlBuilder {
 	 * @param map sql map
 	 */
 	private static void ReadSql(SqlTypeElement el, Map<String,String> map){
+		if(el==null || el.getSql()==null){
+			return;
+		}
 		List<SqlElement> list= el.getSql();
-		if(list!=null){
-			for(SqlElement se : list){
-				map.put(se.getId(),
-						lowerCaseKeyWords(//小写关键字
-							clearFragment(//清理sql碎片
-								processComment(//处理注释、空格
-										se.getText()
-								)
-							)
-						)
+		for(SqlElement se : list){
+			//父级sql也可以作为有效的sql
+			map.put(se.getId(),processSqlScripts(se.getText()));
+			if(se.getSubSql().isEmpty()){
+				continue;
+			}
+			//处理有子级sql脚本的
+			for(SqlElement subSql : se.getSubSql()){
+				if(StringUtils.isNotBlank(subSql.getProp())){
+					//父子sql级联使用
+					map.put(
+							//级联关系作为id
+							se.getId()+CASCADE_SYMBOL+subSql.getProp(),
+							//子脚本作为sql
+							processSqlScripts(subSql.getText())
 					);
+				}
+				//父子sql连接使用
+				map.put(
+						//将id和子脚本名称连接作为id
+						se.getId()+"+"+subSql.getName(),
+						//与子脚本连接
+						processSqlScripts(se.getText()+subSql.getText())
+				);
 			}
 		}
+	}
+
+	/**
+	 * 处理和缓存脚本
+	 * @param content 脚本内容
+	 * @return 处理过的脚本内容
+	 */
+	private static String processSqlScripts(String content){
+		return lowerCaseKeyWords(//小写关键字
+					clearFragment(//清理sql碎片
+							processComment(//处理注释、空格
+									content
+							)
+					)
+			);
 	}
 	
 	/**
@@ -226,7 +264,7 @@ public abstract class SqlBuilder {
 		//	return new FormatResult(sqlId,args);
 		//}
 		if(sql==null){
-			sql=sqlId;;
+			sql=sqlId;
 		}
 
 		FormatResult rst=new FormatResult(sql,args);
@@ -269,6 +307,9 @@ public abstract class SqlBuilder {
 			deleteNullParam(rst);
 		}
 
+		//处理in查询参数
+		processInCondition(rst);
+
 		logger.debug("format sql ["+sqlId+"]=>"+rst.getSql());
 		//调试参数输出
 		if(logger.isDebugEnabled() && rst.getArgs()!=null){
@@ -283,6 +324,41 @@ public abstract class SqlBuilder {
 			logger.info(sbArgs.toString());
 		}
 		return rst;
+	}
+
+	/**
+	 * 处理in查询参数
+	 * 将in(?)处的问号替换为对应参数数量的问号
+	 * 同时将in的数组参数展开到参数列表
+	 * @param rst 格式化结果
+	 */
+	private static void processInCondition(FormatResult rst){
+		StringBuilder sbSql=new StringBuilder(rst.getSql());
+		List<Object> args=new ArrayList<>();
+		int index,lastIndex=0,i=0;
+		while ((index=sbSql.indexOf("?",lastIndex+1))!=-1){
+			Object arg=rst.getArgs()[i];
+			//若是数组参数，则视为in(?)的参数
+			if(arg.getClass().isArray()){
+				//生成?,?,?串
+				String statement=StringUtils.repeat(",?",Array.getLength(arg)).substring(1);
+				//将原来的?替换成?,?,?
+				sbSql.replace(index,index+1,statement);
+				//插入了字符，索引位置后移
+				index=index+statement.length();
+				//展开in参数
+				for(int j=0;j<Array.getLength(arg);j++) {
+					args.add(Array.get(arg, j));
+				}
+			}else{
+				args.add(rst.getArgs()[i]);
+			}
+			lastIndex=index;
+			i++;
+		}
+
+		rst.setSql(sbSql.toString());
+		rst.setArgs(args.toArray());
 	}
 
     /**
@@ -362,7 +438,7 @@ public abstract class SqlBuilder {
 					//找到拼接的字段
 					Field mosField=null;
 					try {
-						mosField = ReflectUtils.getAccessbleField(obj.getClass(),pos);
+						mosField = ReflectUtils.getAccessibleField(obj.getClass(),pos);
 					} catch (Exception e) {
 						//忽略
 					}
@@ -429,7 +505,7 @@ public abstract class SqlBuilder {
 			}
 		} catch (Exception e) {
 			logger.error("Gets the parameters error:"+fieldName,e);
-			//throw new SnException(StrUtil.format("获取参数出错:{0},{1}",fieldName,e.getMessage()),e);
+			//throw new SummerException(StrUtil.format("获取参数出错:{0},{1}",fieldName,e.getMessage()),e);
 		}
 		return orderedArgs.toArray();
 	}
@@ -637,7 +713,7 @@ public abstract class SqlBuilder {
 	 * @param sqlId sqlid
 	 * @return sql
 	 */
-	private static String getSqlById(String sqlId){
+	public static String getSqlById(String sqlId){
 		String sql=null;
 		//取对应sql
 		if(SQL_MAPPING_QUERY.containsKey(sqlId)){

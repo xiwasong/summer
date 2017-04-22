@@ -6,7 +6,7 @@ package cn.hn.java.summer.exception;
  * @version 1.0.1 2013-10-23
  *
  */
-public class BusinessException extends SnException {
+public class BusinessException extends SummerException {
 	private static final long serialVersionUID = 1L;
 
 	public BusinessException(){

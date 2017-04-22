@@ -6,7 +6,7 @@ import cn.hn.java.summer.db.builder.FormatResult;
 import cn.hn.java.summer.db.builder.SqlBuilder;
 import cn.hn.java.summer.db.mapper.SqlGenerator;
 import cn.hn.java.summer.db.paging.IPagingConverter;
-import cn.hn.java.summer.exception.SnException;
+import cn.hn.java.summer.exception.SummerException;
 import cn.hn.java.summer.utils.ReflectUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -14,6 +14,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -66,7 +67,7 @@ public class DbOperator extends JdbcTemplate implements IDbOperator {
 	 * @param <T>
 	 * @param sql 查询语句
 	 * @param rowMapper 行映射器
-	 * @param pageSize 分页大小 不设置默认为Default.PAGESIZE
+	 * @param pageSize 分页大小 不设置默认为Default.PAGE_SIZE
 	 * @param page 当前页 从1开始
 	 * @param args sql参数
 	 * @return 实体列表
@@ -158,7 +159,7 @@ public class DbOperator extends JdbcTemplate implements IDbOperator {
 	 * @param elementType
 	 * @param args
 	 * @return
-	 * @throws SnException
+	 * @throws SummerException
 	 */
 	public <T> List<T> all(String sql,Class<T> elementType, Object...args){
 		return this.list(sql, elementType, args);
@@ -166,22 +167,84 @@ public class DbOperator extends JdbcTemplate implements IDbOperator {
 	
 	/**
 	 * 查询单个对象值
+	 * 级联查询：当参数sqlId格式为a.b时，a为父级sqlId，b为type中对应的属性名，a.b为子sqlId
+	 * 查询时，先查询出父级sqlId为a的bean，再用子级sqlId为a.b查出对应的bean或list设置给父级bean中的b属性
 	 * @param <T>
 	 * @param type
-	 * @param sql
+	 * @param sqlId
 	 * @param args
 	 * @return
 	 */
-	public <T> T get(String sql, Class<T> type, Object... args){
-		FormatResult rst=SqlBuilder.format(sql,args);
+	public <T> T get(String sqlId, Class<T> type, Object... args){
 		//取无声明属性的对象
 		if(!hasProperty(type)){
+			FormatResult rst=SqlBuilder.format(sqlId,args);
 			return getNoPropertyObject(type,rst.getSql(),rst.getArgs());
-		}else{
-			//取有属性的对象
-			return getObject(type,rst.getSql(),rst.getArgs());
 		}
-	}	
+		//有属性的为bean
+		String sql=SqlBuilder.getSqlById(sqlId);
+		String parentSqlId=sqlId;
+		int symbolIndex=sqlId.indexOf(SqlBuilder.CASCADE_SYMBOL);
+		//sqlId与sql不一致则为配置的sql
+		if (sql!=null && !sqlId.equals(sql) && symbolIndex>0) {
+			//获取父级sqlId，原sqlId则成为子sqlId
+			//即当参数sqlId格式为a<-b时，a为父级sqlId，b为type中对应的属性名，a<-b为子sqlId
+			//查询时，先查询出父级sqlId为a的bean，再用子级sqlId为a<-b查出对应的bean或list设置给父级bean中的b属性
+			parentSqlId=sqlId.substring(0,symbolIndex);
+			//先查父级bean
+			FormatResult rst=SqlBuilder.format(parentSqlId,args);
+			T parentBean=getObject(type,rst.getSql(),rst.getArgs());
+			if(parentBean==null){
+				return null;
+			}
+			//级联查询属性
+			//执行子sql
+			String propName=sqlId.substring(symbolIndex+SqlBuilder.CASCADE_SYMBOL.length());
+			//获取属性
+			Field prop=ReflectUtils.getField(type,propName);
+			if(prop==null){
+				return parentBean;
+			}
+			//根据属性类型查询结果
+			Object propVal=getObjectByPropType(sqlId,prop.getGenericType(),args);
+			//设置属性值
+			ReflectUtils.setFieldValue(parentBean,propName,propVal);
+			return parentBean;
+		}
+
+		//非级联查询
+		FormatResult rst=SqlBuilder.format(parentSqlId,args);
+		return getObject(type,rst.getSql(),rst.getArgs());
+	}
+
+	/**
+	 * 获取通过属性类型查询到对象
+	 * @param sqlId
+	 * @param type
+	 * @param args
+	 * @return
+	 */
+	private Object getObjectByPropType(String sqlId, Type type, Object[] args){
+		//属性值
+		Object propVal;
+		//类型的class
+		Class typeClass=ReflectUtils.getTypeClass(type);
+		if(typeClass == List.class){
+			Class[] genericClasses=ReflectUtils.getActualTypeArguments(type);
+			if(genericClasses.length>0){
+				//属性类型为列表，查询列表结果
+				propVal=all(sqlId,genericClasses[0],args);
+			}else{
+				propVal=new ArrayList<>();
+			}
+		}else{
+			//取单个需要先取得sql
+			FormatResult rst=SqlBuilder.format(sqlId, args);
+			//查询bean结果
+			propVal=getObject(typeClass,rst.getSql(),rst.getArgs());
+		}
+		return propVal;
+	}
 	
 	
 	/**
@@ -242,11 +305,11 @@ public class DbOperator extends JdbcTemplate implements IDbOperator {
 
 	/**
 	 * 执行批量添加、修改、删除操作
-	 * @throws SnException 
+	 * @throws SummerException
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public <T> int[] batchUpdate(String sql, List<T> batchArgs,
-			IBatchArgMapper mapper) throws SnException {
+			IBatchArgMapper mapper) throws SummerException {
 		FormatResult rst=SqlBuilder.format(sql,batchArgs.get(0));
 		List<Object[]> args=new ArrayList<>();
 		for(T t:batchArgs){

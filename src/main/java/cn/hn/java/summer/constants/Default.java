@@ -10,7 +10,7 @@ public abstract class Default {
 	/**
 	 * 默认分页大小
 	 */
-	public static final int PAGESIZE=15;	
+	public static final int PAGE_SIZE =15;
 	
 
 	/**
@@ -33,7 +33,7 @@ public abstract class Default {
 	/**
 	 * 存储在请求上下文中的action结果键
 	 */
-	public static final String ACTIONRESULT_IN_REQUEST_KEY="action_result";
+	public static final String ACTION_RESULT_IN_REQUEST_KEY ="action_result";
 	
 
 	/**
@@ -69,12 +69,12 @@ public abstract class Default {
 	/**
 	 * 标记响应已跳转
 	 */
-	public static final String MARK_RESPONSE_IS_REDIRECTED = "markResonseIsRedirected";
+	public static final String MARK_RESPONSE_IS_REDIRECTED = "markResponseIsRedirected";
 
 	/**
 	 * action多值返回时键的前缀
 	 */
-	public static final String MUTIPLE_RESULT_PREFIX="mutiple:";
+	public static final String MULTIPLE_RESULT_PREFIX ="multiple:";
 
 	/**
 	 * 表单字段值汇总键
@@ -87,7 +87,7 @@ public abstract class Default {
 	public static final String PAGE_POST_BACK_KEY="_isPostBack";
 
 	/**
-	 * 存储restfull风格视图名的键
+	 * 存储restful风格视图名的键
 	 */
-	public static final String RESTFULL_VIEW_NAME_KEY="restfull_view_name_key";
+	public static final String RESTFUL_VIEW_NAME_KEY ="restful_view_name_key";
 }

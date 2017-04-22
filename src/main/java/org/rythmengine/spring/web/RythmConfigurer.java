@@ -69,7 +69,7 @@ public class RythmConfigurer extends RythmEngineFactory implements
 
     public static final String CONF_CSRF_HEADER_NAME = "csrfHeaderName";
     
-    public static final String MARK_RESPONSE_IS_REDIRECTED = "markResonseIsRedirected";
+    public static final String MARK_RESPONSE_IS_REDIRECTED = "markResponseIsRedirected";
 
     private static RythmEngine engine;
 

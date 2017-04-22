@@ -29,7 +29,7 @@ public class Page {
 	}
 	
 	public int getPageSize() {
-		return pageSize==0?Default.PAGESIZE:pageSize;
+		return pageSize==0?Default.PAGE_SIZE :pageSize;
 	}
 
 	public void setPageSize(int pageSize) {

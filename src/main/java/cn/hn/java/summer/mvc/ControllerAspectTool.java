@@ -48,7 +48,14 @@ public abstract class ControllerAspectTool{
 	 * @throws Throwable
 	 */
     public static Object around(ProceedingJoinPoint pjp,ApplicationContext context) throws Throwable{
-		Method mtd=getMethod(pjp);
+
+    	//如果请求已跳转，则不调用action方法
+		String redirectUrl=WebContext.getRequestAttribute(Default.MARK_RESPONSE_IS_REDIRECTED);
+		if(redirectUrl!=null){
+			return null;
+		}
+
+    	Method mtd=getMethod(pjp);
 
         //支持“回退提交”且是“回退提交”时不执行业务方法
         if(Config.isSupportBackPost && isBackPost(mtd)){
@@ -64,7 +71,7 @@ public abstract class ControllerAspectTool{
 	    	
 	    	//保存返回值的键
 	    	Type type=mtd.getReturnType();
-	    	ArrayList<Object> allTupleValues=new ArrayList<Object>();
+	    	ArrayList<Object> allTupleValues=new ArrayList<>();
 	    	
 	    	boolean isTupleResult=false;
 	    	//元组类型,将元组中的值分离出来
@@ -107,16 +114,16 @@ public abstract class ControllerAspectTool{
 		    		WebContext.setRequestAttribute(resultKey[i],allTupleValues.get(i));
 		    		logger.debug("resultKey=>"+resultKey[i]);
 	    		}
-	    		//将键添加到请求中，待SnJsonMaper取
-	    		WebContext.setRequestAttribute(Default.ACTIONRESULT_IN_REQUEST_KEY, 
-	    				Default.MUTIPLE_RESULT_PREFIX+StringUtils.join(resultKey, ","));
+	    		//将键添加到请求中，待SnJsonMapper取
+	    		WebContext.setRequestAttribute(Default.ACTION_RESULT_IN_REQUEST_KEY,
+	    				Default.MULTIPLE_RESULT_PREFIX +StringUtils.join(resultKey, ","));
 	    	}else{
 	    		//其它类型
 	    		//取返回值类型标识
 	    		String resultKey=mtd.getGenericReturnType().toString();
 	    		resultKey=getGenericString(resultKey);
-	    		//添加到请求中，待SnJsonMaper取
-	    		WebContext.setRequestAttribute(Default.ACTIONRESULT_IN_REQUEST_KEY, resultKey);
+	    		//添加到请求中，待SnJsonMapper取
+	    		WebContext.setRequestAttribute(Default.ACTION_RESULT_IN_REQUEST_KEY, resultKey);
 	    		logger.debug("resultKey=>"+resultKey);
 	    	}
 
@@ -126,9 +133,9 @@ public abstract class ControllerAspectTool{
                 processException(swallowException,pjp);
             }
 
-            //处理restfull风格请求时指定的视图名
-            if(Config.isIsSupportSetRestfullViewName){
-            	processRestfullViewName(mtd);
+            //处理restful风格请求时指定的视图名
+            if(Config.isIsSupportSetRestfulViewName){
+				processRestfulViewName(mtd);
 			}
 
 			//记录操作日志
@@ -140,9 +147,9 @@ public abstract class ControllerAspectTool{
 	    }catch(Exception ex){
             //处理异常
             processException(ex,pjp);
-			//处理restfull风格请求时指定的视图名
-			if(Config.isIsSupportSetRestfullViewName){
-				processRestfullViewName(mtd);
+			//处理restful风格请求时指定的视图名
+			if(Config.isIsSupportSetRestfulViewName){
+				processRestfulViewName(mtd);
 			}
             //记录操作日志
 			if(Config.isIsSupportActionLog) {
@@ -171,14 +178,14 @@ public abstract class ControllerAspectTool{
 	}
 
 	/**
-	 * 处理restfull风格的视图名
+	 * 处理restful风格的视图名
 	 * 如：xx/{id}需要指定使用xx.html视图
 	 * 此时可以在RequestMapping上指定name="xx.html"，无需在action中返回字符串
 	 */
-	private static void  processRestfullViewName(Method method){
+	private static void  processRestfulViewName(Method method){
 		RequestMapping rm=method.getAnnotation(RequestMapping.class);
 		if(rm!=null && StringUtils.isNoneBlank(rm.name())){
-			WebContext.setRequestAttribute(Default.RESTFULL_VIEW_NAME_KEY,rm.name());
+			WebContext.setRequestAttribute(Default.RESTFUL_VIEW_NAME_KEY,rm.name());
 		}
 	}
 

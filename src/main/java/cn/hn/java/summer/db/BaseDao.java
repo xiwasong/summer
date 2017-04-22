@@ -6,7 +6,7 @@ import cn.hn.java.summer.db.multiple.IDataSourceMark;
 import cn.hn.java.summer.db.multiple.MultipleDataSource;
 import cn.hn.java.summer.db.paging.IPaging;
 import cn.hn.java.summer.db.paging.Page;
-import cn.hn.java.summer.exception.SnException;
+import cn.hn.java.summer.exception.SummerException;
 import cn.hn.java.summer.utils.ReflectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -57,19 +57,19 @@ public class BaseDao<Index extends IDataSourceMark> implements IDbOperator {
 	
 	/**
 	 * 初始化
-	 * @throws SnException 
+	 * @throws SummerException
 	 */
 	@PostConstruct
-	private void init() throws SnException{
+	private void init() throws SummerException {
 		//取Index的类型
-		Class<?> cls= ReflectUtils.getClassGenricType(getClass(), 0);
+		Class<?> cls= ReflectUtils.getClassGenericType(getClass(), 0);
 		if(jdbcTemplate==null){
 			try {
 				//根据Index的类型取对应的jdbcTemplate
 				jdbcTemplate=multipleDataSource.get(cls.newInstance());
 			} catch (Exception ex) {
 				logger.error("设置jdbcTemplate出错",ex);
-				throw new SnException("初始化数据源失败",ex);
+				throw new SummerException("初始化数据源失败",ex);
 			}
 		}
 	}
@@ -77,7 +77,7 @@ public class BaseDao<Index extends IDataSourceMark> implements IDbOperator {
 	/**
 	 * 动态取数据源，每次执行数据库操作时调用。
 	 * 请谨慎实现该方法，确保在需要创建DataSource时才创建新的
-	 * @throws SnException 
+	 * @throws SummerException
 	 */
 	public DataSource getDataSource(){
 		return null;
@@ -139,7 +139,7 @@ public class BaseDao<Index extends IDataSourceMark> implements IDbOperator {
 			return getDbOperator().list(sql, elementType, args);
 		}else{
 			return getDbOperator().list(sql, elementType,page.getPageSize(),page.getPage(),args);
-		}		
+		}
 	}
 
 	/**
@@ -151,9 +151,9 @@ public class BaseDao<Index extends IDataSourceMark> implements IDbOperator {
 	 * @param page
 	 * @param args
 	 * @return
-	 * @throws SnException
+	 * @throws SummerException
 	 */
-	public <T> List<T> page(String sql, Class<T> elementType, int pageSize, int page, Object... args) throws SnException {
+	public <T> List<T> page(String sql, Class<T> elementType, int pageSize, int page, Object... args) throws SummerException {
 		return getDbOperator().list(sql, elementType,pageSize,page,args);
 	}
 
@@ -194,11 +194,11 @@ public class BaseDao<Index extends IDataSourceMark> implements IDbOperator {
 	 * @param sql
 	 * @param batchArgs
 	 * @return
-	 * @throws SnException 
+	 * @throws SummerException
 	 */
 	@SuppressWarnings("rawtypes")
 	@Transactional(rollbackFor=Exception.class)
-	public <T> int[] batchUpdate(String sql, List<T> batchArgs,IBatchArgMapper mapper) throws SnException{
+	public <T> int[] batchUpdate(String sql, List<T> batchArgs,IBatchArgMapper mapper) throws SummerException {
 		return getDbOperator().batchUpdate(sql, batchArgs,mapper);
 	}
 

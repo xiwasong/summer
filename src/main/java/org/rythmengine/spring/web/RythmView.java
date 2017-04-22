@@ -115,8 +115,8 @@ public class RythmView extends AbstractTemplateView {
 
         if (null == rsrc || !rsrc.isValid()){
             //当找不到视图，且支持设置restfull风格请求视图名时，优先取RequestMapping的name作为视图名
-            String viewName=WebContext.getRequestAttribute(Default.RESTFULL_VIEW_NAME_KEY);
-            if(Config.isIsSupportSetRestfullViewName && StringUtils.isNotBlank(viewName)){
+            String viewName=WebContext.getRequestAttribute(Default.RESTFUL_VIEW_NAME_KEY);
+            if(Config.isIsSupportSetRestfulViewName && StringUtils.isNotBlank(viewName)){
                 int dotIndex=url.indexOf('.');
                 if(dotIndex>=0){
                     url=url.substring(dotIndex);

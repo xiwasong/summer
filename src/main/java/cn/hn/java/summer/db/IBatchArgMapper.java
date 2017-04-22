@@ -1,6 +1,6 @@
 package cn.hn.java.summer.db;
 
-import cn.hn.java.summer.exception.SnException;
+import cn.hn.java.summer.exception.SummerException;
 
 /**
  * 批量操作参数映射接口
@@ -16,5 +16,5 @@ public interface IBatchArgMapper<T> {
 	 * @param t
 	 * @return
 	 */
-	public Object[] getArgs(T t) throws SnException;
+	public Object[] getArgs(T t) throws SummerException;
 }

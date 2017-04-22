@@ -14,7 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cn.hn.java.summer.exception.SnException;
+import cn.hn.java.summer.exception.SummerException;
 
 public class FileUtils extends org.apache.commons.io.FileUtils{
 	static Log logger=LogFactory.getLog(FileUtils.class);
@@ -35,15 +35,15 @@ public class FileUtils extends org.apache.commons.io.FileUtils{
 	 * @param input 
 	 * @param reader
 	 * @return
-	 * @throws SnException 
+	 * @throws SummerException
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> transfer(InputStream input,IReadString reader) throws SnException{
+	public static <T> List<T> transfer(InputStream input,IReadString reader) throws SummerException {
 		String str="";
 		try {
 			str = readString(input);
 		} catch (IOException e) {
-			new SnException("read input to string error!",e);
+			new SummerException("read input to string error!",e);
 		}
 		
 		if(StringUtils.isBlank(str)){
